@@ -112,10 +112,16 @@ class Reline::ANSI
       @@input.raw do |stdin|
         @@output << "\e[6n"
         @@output.flush
-        while (c = stdin.getc) != 'R'
-          res << c if c
+        while (c = stdin.getc)
+          res << c
+          if c == "\e"
+            esc_pos = res.size
+          elsif esc_pos && c == 'R'
+            m = res.match(/\e\[(?<row>\d+);(?<column>\d+)R/, esc_pos)
+            break if m
+            esc_pos = nil
+          end
         end
-        m = res.match(/\e\[(?<row>\d+);(?<column>\d+)/)
         (m.pre_match + m.post_match).chars.reverse_each do |ch|
           stdin.ungetc ch
         end
