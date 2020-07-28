@@ -270,4 +270,8 @@ class Reline::Windows
   def self.deprep(otio)
     # do nothing
   end
+
+  def self.without_handlers
+    yield
+  end
 end

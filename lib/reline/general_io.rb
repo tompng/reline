@@ -72,4 +72,7 @@ class Reline::GeneralIO
 
   def self.deprep(otio)
   end
+
+  def self.without_handlers(&block)
+  end
 end

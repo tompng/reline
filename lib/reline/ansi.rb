@@ -188,4 +188,13 @@ class Reline::ANSI
     Signal.trap('INT', int_handle)
     Signal.trap('WINCH', @@old_winch_handler) if @@old_winch_handler
   end
+
+  def self.without_handlers
+    winch_handle = Signal.trap('WINCH', 'IGNORE')
+    int_handle = Signal.trap('INT', 'IGNORE')
+    yield
+  ensure
+    Signal.trap('WINCH', winch_handle)
+    Signal.trap('INT', int_handle)
+  end
 end
