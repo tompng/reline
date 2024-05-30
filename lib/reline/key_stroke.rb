@@ -11,11 +11,6 @@ class Reline::KeyStroke
   def match_status(input)
     matching = key_mapping.matching?(input)
     matched = key_mapping.get(input)
-
-    # FIXME: Workaround for single byte. remove this after MAPPING is merged into KeyActor.
-    matched ||= input.size == 1 && input[0] < 0x80
-    matching ||= input == [ESC_BYTE]
-
     if matching && matched
       :matching_matched
     elsif matching
@@ -46,16 +41,14 @@ class Reline::KeyStroke
     return [[], []] unless matched_bytes
 
     func = key_mapping.get(matched_bytes)
+    s = matched_bytes.pack('c*').force_encoding(@encoding)
     if func.is_a?(Array)
-      keys = func.map { |c| Reline::Key.new(c, c, false) }
+      keys = func.map { |c| Reline::Key.new(c.chr(@encoding), :ed_insert, false) }
     elsif func
-      keys = [Reline::Key.new(func, func, false)]
-    elsif matched_bytes.size == 2 && matched_bytes[0] == ESC_BYTE
-      keys = [Reline::Key.new(matched_bytes[1], matched_bytes[1] | 0b10000000, true)]
+      keys = [Reline::Key.new(s, func, false)]
     else
-      s = matched_bytes.pack('c*').force_encoding(@encoding)
       if s.valid_encoding? && s.size == 1
-        keys = [Reline::Key.new(s.ord, s.ord, false)]
+        keys = [Reline::Key.new(s, :ed_insert, false)]
       else
         keys = []
       end

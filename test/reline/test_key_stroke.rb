@@ -1,18 +1,6 @@
 require_relative 'helper'
 
 class Reline::KeyStroke::Test < Reline::TestCase
-  using Module.new {
-    refine Array do
-      def as_s
-        join
-      end
-
-      def to_keys
-        map{ |b| Reline::Key.new(b, b, false) }
-      end
-    end
-  }
-
   def encoding
     Reline.core.encoding
   end
@@ -71,8 +59,8 @@ class Reline::KeyStroke::Test < Reline::TestCase
       config.add_default_key_binding(key.bytes, func.bytes)
     end
     stroke = Reline::KeyStroke.new(config, encoding)
-    assert_equal(['123'.bytes.map { |c| Reline::Key.new(c, c, false) }, 'de'.bytes], stroke.expand('abcde'.bytes))
-    assert_equal(['456'.bytes.map { |c| Reline::Key.new(c, c, false) }, 'de'.bytes], stroke.expand('abde'.bytes))
+    assert_equal(['123'.chars.map { |c| Reline::Key.new(c, :ed_insert, false) }, 'de'.bytes], stroke.expand('abcde'.bytes))
+    assert_equal(['456'.chars.map { |c| Reline::Key.new(c, :ed_insert, false) }, 'de'.bytes], stroke.expand('abde'.bytes))
     # CSI sequence
     assert_equal([[], 'bc'.bytes], stroke.expand("\e[1;2;3;4;5abc".bytes))
     assert_equal([[], 'BC'.bytes], stroke.expand("\e\e[ABC".bytes))
@@ -111,7 +99,7 @@ class Reline::KeyStroke::Test < Reline::TestCase
     config = Reline::Config.new
     stroke = Reline::KeyStroke.new(config, encoding)
     char = 'あ'.encode(encoding)
-    key = Reline::Key.new(char.ord, char.ord, false)
+    key = Reline::Key.new(char, :ed_insert, false)
     bytes = char.bytes
     assert_equal(:matched, stroke.match_status(bytes))
     assert_equal([[key], []], stroke.expand(bytes))
