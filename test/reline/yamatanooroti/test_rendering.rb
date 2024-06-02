@@ -543,6 +543,17 @@ begin
       EOC
     end
 
+    def test_quoted_insert
+      omit if Reline.core.io_gate.win?
+      start_terminal(5, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
+      write("ab\C-v\C-acd\C-vあef")
+      close
+      assert_screen(<<~EOC)
+        Multiline REPL.
+        prompt> ab^Acdあef
+      EOC
+    end
+
     def test_bracketed_paste
       omit if Reline.core.io_gate.win?
       start_terminal(5, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')

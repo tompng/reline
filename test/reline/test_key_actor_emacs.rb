@@ -139,10 +139,10 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_ed_quoted_insert
-    input_keys("ab\C-v\C-acd")
+    input_keys("ab")
+    input_key_by_symbol(:ed_quoted_insert, char: "\C-a")
+    input_keys("cd")
     assert_line_around_cursor("ab\C-acd", '')
-    input_keys("\C-q\C-b")
-    assert_line_around_cursor("ab\C-acd\C-b", '')
   end
 
   def test_ed_kill_line
@@ -1396,8 +1396,10 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_ignore_NUL_by_ed_quoted_insert
-    input_keys(%Q{"\C-v\C-@"}, false)
-    assert_line_around_cursor('""', '')
+    input_keys('ab')
+    input_key_by_symbol(:ed_quoted_insert, char: "\0")
+    input_keys('cd')
+    assert_line_around_cursor('abcd', '')
   end
 
   def test_ed_argument_digit_by_meta_num

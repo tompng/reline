@@ -105,8 +105,8 @@ class Reline::TestCase < Test::Unit::TestCase
     retry
   end
 
-  def input_key_by_symbol(input, csi: false)
-    dummy_char = csi ? "\e[A" : "\C-a"
+  def input_key_by_symbol(input, csi: false, char: nil)
+    dummy_char = char || (csi ? "\e[A" : "\C-a")
     @line_editor.input_key(Reline::Key.new(dummy_char, input, false))
   end
 

@@ -39,6 +39,22 @@ module Reline
     def reset_color_sequence
       self.class::RESET_COLOR
     end
+
+    def encoding
+      raise NotImplementedError
+    end
+
+    def read_valid_char(timeout)
+      buffer = String.new(encoding: Encoding::ASCII_8BIT)
+      while true
+        c = getc(buffer.empty? ? Float::INFINITY : timeout)
+        return unless c && c != -1
+
+        buffer << c
+        s = buffer.dup.force_encoding(encoding)
+        return s if s.valid_encoding?
+      end
+    end
   end
 end
 

@@ -339,12 +339,16 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_ed_quoted_insert
-    input_keys("ab\C-v\C-acd")
+    input_keys("ab")
+    input_key_by_symbol(:ed_quoted_insert, char: "\C-a")
+    input_keys("cd")
     assert_line_around_cursor("ab\C-acd", '')
   end
 
   def test_ed_quoted_insert_with_vi_arg
-    input_keys("ab\C-[3\C-v\C-aacd")
+    input_keys("ab\C-[3")
+    input_key_by_symbol(:ed_quoted_insert, char: "\C-a")
+    input_keys("acd")
     assert_line_around_cursor("a\C-a\C-a\C-abcd", '')
   end
 

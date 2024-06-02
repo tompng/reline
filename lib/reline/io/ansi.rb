@@ -174,11 +174,8 @@ class Reline::ANSI < Reline::IO
       Reline.core.line_editor.handle_signal
     end
     c = @input.getbyte
-    (c == 0x16 && @input.raw(min: 0, time: 0, &:getbyte)) || c
   rescue Errno::EIO
     # Maybe the I/O has been closed.
-    nil
-  rescue Errno::ENOTTY
     nil
   end
 

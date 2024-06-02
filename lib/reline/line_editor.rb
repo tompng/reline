@@ -1068,7 +1068,7 @@ class Reline::LineEditor
   end
 
   def input_key(key)
-    save_old_buffer
+    old_buffer_of_lines = @buffer_of_lines.dup
     @config.reset_oneshot_key_bindings
     if key.char.nil?
       process_insert(force: true)
@@ -1097,7 +1097,7 @@ class Reline::LineEditor
       @completion_journey_state = nil
     end
 
-    push_input_lines unless @undoing
+    push_input_lines(old_buffer_of_lines) unless @undoing
     @undoing = false
 
     if @in_pasting
@@ -1105,7 +1105,7 @@ class Reline::LineEditor
       return
     end
 
-    modified = @old_buffer_of_lines != @buffer_of_lines
+    modified = old_buffer_of_lines != @buffer_of_lines
     if !@completion_occurs && modified && !@config.disable_completion && @config.autocompletion
       # Auto complete starts only when edited
       process_insert(force: true)
@@ -1114,12 +1114,8 @@ class Reline::LineEditor
     modified
   end
 
-  def save_old_buffer
-    @old_buffer_of_lines = @buffer_of_lines.dup
-  end
-
-  def push_input_lines
-    if @old_buffer_of_lines == @buffer_of_lines
+  def push_input_lines(old_buffer_of_lines)
+    if old_buffer_of_lines == @buffer_of_lines
       @input_lines[@input_lines_position] = [@buffer_of_lines.dup, @byte_pointer, @line_index]
     else
       @input_lines = @input_lines[0..@input_lines_position]
@@ -1306,16 +1302,14 @@ class Reline::LineEditor
     @confirm_multiline_termination_proc.(temp_buffer.join("\n") + "\n")
   end
 
-  def insert_pasted_text(text)
-    save_old_buffer
+  def bracketed_paste_start(str)
     pre = @buffer_of_lines[@line_index].byteslice(0, @byte_pointer)
     post = @buffer_of_lines[@line_index].byteslice(@byte_pointer..)
-    lines = (pre + text.gsub(/\r\n?/, "\n") + post).split("\n", -1)
+    lines = (pre + str.gsub(/\r\n?/, "\n") + post).split("\n", -1)
     lines << '' if lines.empty?
     @buffer_of_lines[@line_index, 1] = lines
     @line_index += lines.size - 1
     @byte_pointer = @buffer_of_lines[@line_index].bytesize - post.bytesize
-    push_input_lines
   end
 
   def insert_text(text)
@@ -1495,17 +1489,14 @@ class Reline::LineEditor
   alias_method :self_insert, :ed_insert
 
   private def ed_quoted_insert(str, arg: 1)
-    @waiting_proc = proc { |key|
-      arg.times do
-        if key == "\C-j" or key == "\C-m"
-          key_newline(key)
-        elsif key != "\0"
-          # Ignore NUL.
-          ed_insert(key)
-        end
+    arg.times do
+      if str == "\C-j" or str == "\C-m"
+        key_newline(str)
+      elsif str != "\0"
+        # Ignore NUL.
+        ed_insert(str)
       end
-      @waiting_proc = nil
-    }
+    end
   end
   alias_method :quoted_insert, :ed_quoted_insert
 
