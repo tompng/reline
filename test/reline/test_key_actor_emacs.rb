@@ -1002,6 +1002,19 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     assert_line_around_cursor('foo_ba', '')
   end
 
+  def test_completion_append_character
+    @line_editor.completion_proc = proc { |word|
+      %w[foo_foo foo_bar].select { |s| s.start_with? word }
+    }
+    @line_editor.completion_append_character = 'X'
+    input_keys('f')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('foo_', '')
+    input_keys('b')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('foo_barX', '')
+  end
+
   def test_em_kill_region
     input_keys('abc   def{bbb}ccc   ddd   ')
     assert_line_around_cursor('abc   def{bbb}ccc   ddd   ', '')

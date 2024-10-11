@@ -878,8 +878,10 @@ class Reline::LineEditor
         perform_completion(list, true) if @config.show_all_if_ambiguous
       end
       if not just_show_list and target < completed
-        @buffer_of_lines[@line_index] = (preposing + completed + completion_append_character.to_s + postposing).split("\n")[@line_index] || String.new(encoding: @encoding)
-        line_to_pointer = (preposing + completed + completion_append_character.to_s).split("\n")[@line_index] || String.new(encoding: @encoding)
+        append_char = completion_append_character if @completion_state == CompletionState::PERFECT_MATCH
+        text_to_pointer = "#{preposing}#{completed}#{append_char}"
+        @buffer_of_lines[@line_index] = "#{text_to_pointer}#{postposing}".split("\n")[@line_index] || String.new(encoding: @encoding)
+        line_to_pointer = text_to_pointer.split("\n")[@line_index] || String.new(encoding: @encoding)
         @byte_pointer = line_to_pointer.bytesize
       end
     end
