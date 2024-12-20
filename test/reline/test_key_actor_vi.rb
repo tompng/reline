@@ -21,6 +21,16 @@ class Reline::ViInsertTest < Reline::TestCase
     Reline.test_reset
   end
 
+  def set_line_around_cursor(before, after, mode)
+    raise ArgumentError unless mode == :vi_insert || mode == :vi_command
+
+    input_keys("\C-[0dei")
+    input_keys(after)
+    input_keys("\C-[0i")
+    input_keys(before)
+    input_keys(before.empty? ? "\C-[" : "\C-[l") if mode == :vi_command
+  end
+
   def test_vi_command_mode
     input_keys("\C-[")
     assert_equal(:vi_command, editing_mode_label)
@@ -62,9 +72,7 @@ class Reline::ViInsertTest < Reline::TestCase
     input_keys('I')
     assert_line_around_cursor('I', '')
     assert_equal(:vi_insert, editing_mode_label)
-    input_keys("12345\C-[hh")
-    assert_line_around_cursor('I12', '345')
-    assert_equal(:vi_command, editing_mode_label)
+    set_line_around_cursor('I12', '345', :vi_command)
     input_keys('I')
     assert_line_around_cursor('', 'I12345')
     assert_equal(:vi_insert, editing_mode_label)
@@ -74,9 +82,7 @@ class Reline::ViInsertTest < Reline::TestCase
     input_keys('A')
     assert_line_around_cursor('A', '')
     assert_equal(:vi_insert, editing_mode_label)
-    input_keys("12345\C-[hh")
-    assert_line_around_cursor('A12', '345')
-    assert_equal(:vi_command, editing_mode_label)
+    set_line_around_cursor('A12', '345', :vi_command)
     input_keys('A')
     assert_line_around_cursor('A12345', '')
     assert_equal(:vi_insert, editing_mode_label)
@@ -124,8 +130,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_ed_next_char
-    input_keys("abcdef\C-[0")
-    assert_line_around_cursor('', 'abcdef')
+    set_line_around_cursor('', 'abcdef', :vi_command)
     input_keys('l')
     assert_line_around_cursor('a', 'bcdef')
     input_keys('2l')
@@ -133,8 +138,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_ed_prev_char
-    input_keys("abcdef\C-[")
-    assert_line_around_cursor('abcde', 'f')
+    set_line_around_cursor('abcde', 'f', :vi_command)
     input_keys('h')
     assert_line_around_cursor('abcd', 'ef')
     input_keys('2h')
@@ -156,8 +160,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_paste_prev
-    input_keys("abcde\C-[3h")
-    assert_line_around_cursor('a', 'bcde')
+    set_line_around_cursor('a', 'bcde', :vi_command)
     input_keys('P')
     assert_line_around_cursor('a', 'bcde')
     input_keys('d$')
@@ -169,8 +172,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_paste_next
-    input_keys("abcde\C-[3h")
-    assert_line_around_cursor('a', 'bcde')
+    set_line_around_cursor('a', 'bcde', :vi_command)
     input_keys('p')
     assert_line_around_cursor('a', 'bcde')
     input_keys('d$')
@@ -182,8 +184,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_paste_prev_for_mbchar
-    input_keys("あいうえお\C-[3h")
-    assert_line_around_cursor('あ', 'いうえお')
+    set_line_around_cursor('あ', 'いうえお', :vi_command)
     input_keys('P')
     assert_line_around_cursor('あ', 'いうえお')
     input_keys('d$')
@@ -195,8 +196,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_paste_next_for_mbchar
-    input_keys("あいうえお\C-[3h")
-    assert_line_around_cursor('あ', 'いうえお')
+    set_line_around_cursor('あ', 'いうえお', :vi_command)
     input_keys('p')
     assert_line_around_cursor('あ', 'いうえお')
     input_keys('d$')
@@ -208,8 +208,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_paste_prev_for_mbchar_by_plural_code_points
-    input_keys("か\u3099き\u3099く\u3099け\u3099こ\u3099\C-[3h")
-    assert_line_around_cursor("か\u3099", "き\u3099く\u3099け\u3099こ\u3099")
+    set_line_around_cursor("か\u3099", "き\u3099く\u3099け\u3099こ\u3099", :vi_command)
     input_keys('P')
     assert_line_around_cursor("か\u3099", "き\u3099く\u3099け\u3099こ\u3099")
     input_keys('d$')
@@ -221,8 +220,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_paste_next_for_mbchar_by_plural_code_points
-    input_keys("か\u3099き\u3099く\u3099け\u3099こ\u3099\C-[3h")
-    assert_line_around_cursor("か\u3099", "き\u3099く\u3099け\u3099こ\u3099")
+    set_line_around_cursor("か\u3099", "き\u3099く\u3099け\u3099こ\u3099", :vi_command)
     input_keys('p')
     assert_line_around_cursor("か\u3099", "き\u3099く\u3099け\u3099こ\u3099")
     input_keys('d$')
@@ -234,8 +232,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_prev_next_word
-    input_keys("aaa b{b}b ccc\C-[0")
-    assert_line_around_cursor('', 'aaa b{b}b ccc')
+    set_line_around_cursor('', 'aaa b{b}b ccc', :vi_command)
     input_keys('w')
     assert_line_around_cursor('aaa ', 'b{b}b ccc')
     input_keys('w')
@@ -279,8 +276,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_end_word
-    input_keys("aaa   b{b}}}b   ccc\C-[0")
-    assert_line_around_cursor('', 'aaa   b{b}}}b   ccc')
+    set_line_around_cursor('', 'aaa   b{b}}}b   ccc', :vi_command)
     input_keys('e')
     assert_line_around_cursor('aa', 'a   b{b}}}b   ccc')
     input_keys('e')
@@ -306,8 +302,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_prev_next_big_word
-    input_keys("aaa b{b}b ccc\C-[0")
-    assert_line_around_cursor('', 'aaa b{b}b ccc')
+    set_line_around_cursor('', 'aaa b{b}b ccc', :vi_command)
     input_keys('W')
     assert_line_around_cursor('aaa ', 'b{b}b ccc')
     input_keys('W')
@@ -331,8 +326,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_end_big_word
-    input_keys("aaa   b{b}}}b   ccc\C-[0")
-    assert_line_around_cursor('', 'aaa   b{b}}}b   ccc')
+    set_line_around_cursor('', 'aaa   b{b}}}b   ccc', :vi_command)
     input_keys('E')
     assert_line_around_cursor('aa', 'a   b{b}}}b   ccc')
     input_keys('E')
@@ -358,8 +352,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_replace_char
-    input_keys("abcdef\C-[03l")
-    assert_line_around_cursor('abc', 'def')
+    set_line_around_cursor('abc', 'def', :vi_command)
     input_keys('rz')
     assert_line_around_cursor('abc', 'zef')
     input_keys('2rx')
@@ -367,8 +360,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_replace_char_with_mbchar
-    input_keys("あいうえお\C-[0l")
-    assert_line_around_cursor('あ', 'いうえお')
+    set_line_around_cursor('あ', 'いうえお', :vi_command)
     input_keys('rx')
     assert_line_around_cursor('あ', 'xうえお')
     input_keys('l2ry')
@@ -376,8 +368,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_next_char
-    input_keys("abcdef\C-[0")
-    assert_line_around_cursor('', 'abcdef')
+    set_line_around_cursor('', 'abcdef', :vi_command)
     input_keys('fz')
     assert_line_around_cursor('', 'abcdef')
     input_keys('fe')
@@ -385,8 +376,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_to_next_char
-    input_keys("abcdef\C-[0")
-    assert_line_around_cursor('', 'abcdef')
+    set_line_around_cursor('', 'abcdef', :vi_command)
     input_keys('tz')
     assert_line_around_cursor('', 'abcdef')
     input_keys('te')
@@ -394,8 +384,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_prev_char
-    input_keys("abcdef\C-[")
-    assert_line_around_cursor('abcde', 'f')
+    set_line_around_cursor('abcde', 'f', :vi_command)
     input_keys('Fz')
     assert_line_around_cursor('abcde', 'f')
     input_keys('Fa')
@@ -403,8 +392,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_to_prev_char
-    input_keys("abcdef\C-[")
-    assert_line_around_cursor('abcde', 'f')
+    set_line_around_cursor('abcde', 'f', :vi_command)
     input_keys('Tz')
     assert_line_around_cursor('abcde', 'f')
     input_keys('Ta')
@@ -412,8 +400,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_delete_next_char
-    input_keys("abc\C-[h")
-    assert_line_around_cursor('a', 'bc')
+    set_line_around_cursor('a', 'bc', :vi_command)
     input_keys('x')
     assert_line_around_cursor('a', 'c')
     input_keys('x')
@@ -425,8 +412,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_delete_next_char_for_mbchar
-    input_keys("あいう\C-[h")
-    assert_line_around_cursor('あ', 'いう')
+    set_line_around_cursor('あ', 'いう', :vi_command)
     input_keys('x')
     assert_line_around_cursor('あ', 'う')
     input_keys('x')
@@ -438,8 +424,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_delete_next_char_for_mbchar_by_plural_code_points
-    input_keys("か\u3099き\u3099く\u3099\C-[h")
-    assert_line_around_cursor("か\u3099", "き\u3099く\u3099")
+    set_line_around_cursor("か\u3099", "き\u3099く\u3099", :vi_command)
     input_keys('x')
     assert_line_around_cursor("か\u3099", "く\u3099")
     input_keys('x')
@@ -472,8 +457,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_ed_delete_prev_char
-    input_keys("abcdefg\C-[h")
-    assert_line_around_cursor('abcde', 'fg')
+    set_line_around_cursor('abcde', 'fg', :vi_command)
     input_keys('X')
     assert_line_around_cursor('abcd', 'fg')
     input_keys('3X')
@@ -613,9 +597,8 @@ class Reline::ViInsertTest < Reline::TestCase
         i.encode(@encoding)
       }
     }
-    input_keys('abcde fo ABCDE')
-    assert_line_around_cursor('abcde fo ABCDE', '')
-    input_keys("\C-[" + 'h' * 5 + "i\C-n")
+    set_line_around_cursor('abcde fo', ' ABCDE', :vi_insert)
+    input_keys("\C-n")
     assert_line_around_cursor('abcde foo_bar', ' ABCDE')
     input_keys("\C-n")
     assert_line_around_cursor('abcde foo_bar_baz', ' ABCDE')
@@ -745,8 +728,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_delete_meta
-    input_keys("aaa bbb ccc ddd eee\C-[02w")
-    assert_line_around_cursor('aaa bbb ', 'ccc ddd eee')
+    set_line_around_cursor('aaa bbb ', 'ccc ddd eee', :vi_command)
     input_keys('dw')
     assert_line_around_cursor('aaa bbb ', 'ddd eee')
     input_keys('db')
@@ -754,14 +736,14 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_delete_meta_nothing
-    input_keys("foo\C-[0")
-    assert_line_around_cursor('', 'foo')
+    set_line_around_cursor('', 'foo', :vi_command)
     input_keys('dhp')
     assert_line_around_cursor('', 'foo')
   end
 
   def test_vi_delete_meta_with_vi_next_word_at_eol
-    input_keys("foo bar\C-[0w")
+    set_line_around_cursor('', 'foo bar', :vi_command)
+    input_keys('w')
     assert_line_around_cursor('foo ', 'bar')
     input_keys('w')
     assert_line_around_cursor('foo ba', 'r')
@@ -772,15 +754,13 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_delete_meta_with_vi_next_char
-    input_keys("aaa bbb ccc ___ ddd\C-[02w")
-    assert_line_around_cursor('aaa bbb ', 'ccc ___ ddd')
+    set_line_around_cursor('aaa bbb ', 'ccc ___ ddd', :vi_command)
     input_keys('df_')
     assert_line_around_cursor('aaa bbb ', '__ ddd')
   end
 
   def test_vi_delete_meta_with_arg
-    input_keys("aaa bbb ccc ddd\C-[03w")
-    assert_line_around_cursor('aaa bbb ccc ', 'ddd')
+    set_line_around_cursor('aaa bbb ccc ', 'ddd', :vi_command)
     input_keys('2dl')
     assert_line_around_cursor('aaa bbb ccc ', 'd')
     input_keys('d2h')
@@ -792,8 +772,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_change_meta
-    input_keys("aaa bbb ccc ddd eee\C-[02w")
-    assert_line_around_cursor('aaa bbb ', 'ccc ddd eee')
+    set_line_around_cursor('aaa bbb ', 'ccc ddd eee', :vi_command)
     input_keys('cwaiueo')
     assert_line_around_cursor('aaa bbb aiueo', ' ddd eee')
     input_keys("\C-[")
@@ -803,8 +782,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_change_meta_with_vi_next_word
-    input_keys("foo  bar  baz\C-[0w")
-    assert_line_around_cursor('foo  ', 'bar  baz')
+    set_line_around_cursor('foo  ', 'bar  baz', :vi_command)
     input_keys('cwhoge')
     assert_line_around_cursor('foo  hoge', '  baz')
     input_keys("\C-[")
@@ -812,7 +790,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_waiting_operator_with_waiting_proc
-    input_keys("foo foo foo foo foo\C-[0")
+    set_line_around_cursor('', 'foo foo foo foo foo', :vi_command)
     input_keys('2d3fo')
     assert_line_around_cursor('', ' foo foo')
     input_keys('fo')
@@ -820,7 +798,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_waiting_operator_arg_including_zero
-    input_keys("a111111111111222222222222\C-[0")
+    set_line_around_cursor('', 'a111111111111222222222222', :vi_command)
     input_keys('10df1')
     assert_line_around_cursor('', '11222222222222')
     input_keys('d10f2')
@@ -828,8 +806,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_waiting_operator_cancel
-    input_keys("aaa bbb ccc\C-[02w")
-    assert_line_around_cursor('aaa bbb ', 'ccc')
+    set_line_around_cursor('aaa bbb ', 'ccc', :vi_command)
     # dc dy should cancel delete_meta
     input_keys('dch')
     input_keys('dyh')
@@ -844,8 +821,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_cancel_waiting_with_symbol_key
-    input_keys("aaa bbb lll\C-[0")
-    assert_line_around_cursor('', 'aaa bbb lll')
+    set_line_around_cursor('', 'aaa bbb lll', :vi_command)
     # ed_next_char should move cursor right and cancel vi_next_char
     input_keys('f')
     input_key_by_symbol(:ed_next_char, csi: true)
@@ -859,15 +835,13 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_unimplemented_vi_command_should_be_no_op
-    input_keys("abc\C-[h")
-    assert_line_around_cursor('a', 'bc')
+    set_line_around_cursor('a', 'bc', :vi_command)
     input_keys('@')
     assert_line_around_cursor('a', 'bc')
   end
 
   def test_vi_yank
-    input_keys("foo bar\C-[2h")
-    assert_line_around_cursor('foo ', 'bar')
+    set_line_around_cursor('foo ', 'bar', :vi_command)
     input_keys('y3l')
     assert_line_around_cursor('foo ', 'bar')
     input_keys('P')
@@ -879,15 +853,13 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_yank_nothing
-    input_keys("foo\C-[0")
-    assert_line_around_cursor('', 'foo')
+    set_line_around_cursor('', 'foo', :vi_command)
     input_keys('yhp')
     assert_line_around_cursor('', 'foo')
   end
 
   def test_vi_end_word_with_operator
-    input_keys("foo bar\C-[0")
-    assert_line_around_cursor('', 'foo bar')
+    set_line_around_cursor('', 'foo bar', :vi_command)
     input_keys('de')
     assert_line_around_cursor('', ' bar')
     input_keys('de')
@@ -897,8 +869,7 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_end_big_word_with_operator
-    input_keys("aaa   b{b}}}b\C-[0")
-    assert_line_around_cursor('', 'aaa   b{b}}}b')
+    set_line_around_cursor('', 'aaa   b{b}}}b', :vi_command)
     input_keys('dE')
     assert_line_around_cursor('', '   b{b}}}b')
     input_keys('dE')
@@ -908,15 +879,13 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_next_char_with_operator
-    input_keys("foo bar\C-[0")
-    assert_line_around_cursor('', 'foo bar')
+    set_line_around_cursor('', 'foo bar', :vi_command)
     input_keys('df ')
     assert_line_around_cursor('', 'bar')
   end
 
   def test_ed_delete_next_char_at_eol
-    input_keys('"あ"')
-    assert_line_around_cursor('"あ"', '')
+    set_line_around_cursor('"あ"', '', :vi_insert)
     input_keys("\C-[")
     assert_line_around_cursor('"あ', '"')
     input_keys('xa"')
@@ -938,7 +907,8 @@ class Reline::ViInsertTest < Reline::TestCase
   end
 
   def test_vi_change_to_eol
-    input_keys("abcdef\C-[2hC")
+    set_line_around_cursor('abc', 'def', :vi_command)
+    input_keys('C')
     assert_line_around_cursor('abc', '')
     input_keys("\C-[0C")
     assert_line_around_cursor('', '')

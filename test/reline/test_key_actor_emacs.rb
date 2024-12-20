@@ -17,6 +17,13 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     Reline.test_reset
   end
 
+  def set_line_around_cursor(before, after)
+    input_keys("\C-a\C-k")
+    input_keys(after)
+    input_keys("\C-a")
+    input_keys(before)
+  end
+
   def test_ed_insert_one
     input_keys('a')
     assert_line_around_cursor('a', '')
@@ -306,9 +313,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_next_word
-    assert_line_around_cursor('', '')
-    input_keys('abc def{bbb}ccc')
-    input_keys("\C-a\M-F", false)
+    set_line_around_cursor('', 'abc def{bbb}ccc')
+    input_keys("\M-F", false)
     assert_line_around_cursor('abc', ' def{bbb}ccc')
     input_keys("\M-F", false)
     assert_line_around_cursor('abc def', '{bbb}ccc')
@@ -321,9 +327,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_next_word_for_mbchar
-    assert_line_around_cursor('', '')
-    input_keys('あいう かきく{さしす}たちつ')
-    input_keys("\C-a\M-F", false)
+    set_line_around_cursor('', 'あいう かきく{さしす}たちつ')
+    input_keys("\M-F", false)
     assert_line_around_cursor('あいう', ' かきく{さしす}たちつ')
     input_keys("\M-F", false)
     assert_line_around_cursor('あいう かきく', '{さしす}たちつ')
@@ -337,8 +342,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
 
   def test_em_next_word_for_mbchar_by_plural_code_points
     assert_line_around_cursor("", "")
-    input_keys("あいう か\u3099き\u3099く\u3099{さしす}たちつ")
-    input_keys("\C-a\M-F", false)
+    set_line_around_cursor('', "あいう か\u3099き\u3099く\u3099{さしす}たちつ")
+    input_keys("\M-F", false)
     assert_line_around_cursor("あいう", " か\u3099き\u3099く\u3099{さしす}たちつ")
     input_keys("\M-F", false)
     assert_line_around_cursor("あいう か\u3099き\u3099く\u3099", "{さしす}たちつ")
@@ -396,9 +401,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_delete_next_word
-    input_keys('abc def{bbb}ccc')
-    input_keys("\C-a", false)
-    assert_line_around_cursor('', 'abc def{bbb}ccc')
+    set_line_around_cursor('', 'abc def{bbb}ccc')
     input_keys("\M-d", false)
     assert_line_around_cursor('', ' def{bbb}ccc')
     input_keys("\M-d", false)
@@ -410,9 +413,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_delete_next_word_for_mbchar
-    input_keys('あいう かきく{さしす}たちつ')
-    input_keys("\C-a", false)
-    assert_line_around_cursor('', 'あいう かきく{さしす}たちつ')
+    set_line_around_cursor('', 'あいう かきく{さしす}たちつ')
     input_keys("\M-d", false)
     assert_line_around_cursor('', ' かきく{さしす}たちつ')
     input_keys("\M-d", false)
@@ -424,9 +425,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_delete_next_word_for_mbchar_by_plural_code_points
-    input_keys("あいう か\u3099き\u3099く\u3099{さしす}たちつ")
-    input_keys("\C-a", false)
-    assert_line_around_cursor('', "あいう か\u3099き\u3099く\u3099{さしす}たちつ")
+    set_line_around_cursor('', "あいう か\u3099き\u3099く\u3099{さしす}たちつ")
     input_keys("\M-d", false)
     assert_line_around_cursor('', " か\u3099き\u3099く\u3099{さしす}たちつ")
     input_keys("\M-d", false)
@@ -477,9 +476,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_ed_transpose_chars
-    input_keys('abc')
-    input_keys("\C-a", false)
-    assert_line_around_cursor('', 'abc')
+    set_line_around_cursor('', 'abc')
     input_keys("\C-t", false)
     assert_line_around_cursor('', 'abc')
     input_keys("\C-f\C-t", false)
@@ -491,9 +488,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_ed_transpose_chars_for_mbchar
-    input_keys('あかさ')
-    input_keys("\C-a", false)
-    assert_line_around_cursor('', 'あかさ')
+    set_line_around_cursor('', 'あかさ')
     input_keys("\C-t", false)
     assert_line_around_cursor('', 'あかさ')
     input_keys("\C-f\C-t", false)
@@ -505,9 +500,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_ed_transpose_chars_for_mbchar_by_plural_code_points
-    input_keys("あか\u3099さ")
-    input_keys("\C-a", false)
-    assert_line_around_cursor('', "あか\u3099さ")
+    set_line_around_cursor('', "あか\u3099さ")
     input_keys("\C-t", false)
     assert_line_around_cursor('', "あか\u3099さ")
     input_keys("\C-f\C-t", false)
@@ -663,8 +656,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_capitol_case
-    input_keys('abc def{bbb}ccc')
-    input_keys("\C-a\M-c", false)
+    set_line_around_cursor('', 'abc def{bbb}ccc')
+    input_keys("\M-c", false)
     assert_line_around_cursor('Abc', ' def{bbb}ccc')
     input_keys("\M-c", false)
     assert_line_around_cursor('Abc Def', '{bbb}ccc')
@@ -675,8 +668,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_capitol_case_with_complex_example
-    input_keys('{}#*    AaA!!!cCc   ')
-    input_keys("\C-a\M-c", false)
+    set_line_around_cursor('', '{}#*    AaA!!!cCc   ')
+    input_keys("\M-c", false)
     assert_line_around_cursor('{}#*    Aaa', '!!!cCc   ')
     input_keys("\M-c", false)
     assert_line_around_cursor('{}#*    Aaa!!!Ccc', '   ')
@@ -685,8 +678,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_lower_case
-    input_keys('AbC def{bBb}CCC')
-    input_keys("\C-a\M-l", false)
+    set_line_around_cursor('', 'AbC def{bBb}CCC')
+    input_keys("\M-l", false)
     assert_line_around_cursor('abc', ' def{bBb}CCC')
     input_keys("\M-l", false)
     assert_line_around_cursor('abc def', '{bBb}CCC')
@@ -697,8 +690,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_lower_case_with_complex_example
-    input_keys('{}#*    AaA!!!cCc   ')
-    input_keys("\C-a\M-l", false)
+    set_line_around_cursor('', '{}#*    AaA!!!cCc   ')
+    input_keys("\M-l", false)
     assert_line_around_cursor('{}#*    aaa', '!!!cCc   ')
     input_keys("\M-l", false)
     assert_line_around_cursor('{}#*    aaa!!!ccc', '   ')
@@ -707,8 +700,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_upper_case
-    input_keys('AbC def{bBb}CCC')
-    input_keys("\C-a\M-u", false)
+    set_line_around_cursor('', 'AbC def{bBb}CCC')
+    input_keys("\M-u", false)
     assert_line_around_cursor('ABC', ' def{bBb}CCC')
     input_keys("\M-u", false)
     assert_line_around_cursor('ABC DEF', '{bBb}CCC')
@@ -719,8 +712,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_upper_case_with_complex_example
-    input_keys('{}#*    AaA!!!cCc   ')
-    input_keys("\C-a\M-u", false)
+    set_line_around_cursor('', '{}#*    AaA!!!cCc   ')
+    input_keys("\M-u", false)
     assert_line_around_cursor('{}#*    AAA', '!!!cCc   ')
     input_keys("\M-u", false)
     assert_line_around_cursor('{}#*    AAA!!!CCC', '   ')
@@ -1018,9 +1011,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
         i.encode(@encoding)
       }
     }
-    input_keys('abcde fo ABCDE')
-    assert_line_around_cursor('abcde fo ABCDE', '')
-    input_keys("\C-b" * 6 + "\C-i", false)
+    set_line_around_cursor('abcde fo', ' ABCDE')
+    input_keys("\C-i", false)
     assert_line_around_cursor('abcde foo_', ' ABCDE')
     input_keys("\C-b" * 2 + "\C-i", false)
     assert_line_around_cursor('abcde foo_', 'o_ ABCDE')
@@ -1230,10 +1222,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_set_mark_and_em_exchange_mark
-    input_keys('aaa bbb ccc ddd')
-    assert_line_around_cursor('aaa bbb ccc ddd', '')
-    input_keys("\C-a\M-F\M-F", false)
-    assert_line_around_cursor('aaa bbb', ' ccc ddd')
+    set_line_around_cursor('aaa bbb', ' ccc ddd')
     assert_equal(nil, @line_editor.instance_variable_get(:@mark_pointer))
     input_keys("\x00", false) # C-Space
     assert_line_around_cursor('aaa bbb', ' ccc ddd')
@@ -1247,10 +1236,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_exchange_mark_without_mark
-    input_keys('aaa bbb ccc ddd')
-    assert_line_around_cursor('aaa bbb ccc ddd', '')
-    input_keys("\C-a\M-f", false)
-    assert_line_around_cursor('aaa', ' bbb ccc ddd')
+    set_line_around_cursor('aaa', ' bbb ccc ddd')
     assert_equal(nil, @line_editor.instance_variable_get(:@mark_pointer))
     input_key_by_symbol(:em_exchange_mark)
     assert_line_around_cursor('aaa', ' bbb ccc ddd')
