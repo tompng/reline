@@ -2207,27 +2207,14 @@ class Reline::LineEditor
     }
   end
 
-  private def vi_replace_char(key, arg: 1)
+  private def vi_replace_char(_key, arg: 1)
     @waiting_proc = ->(k) {
-      if arg == 1
-        byte_size = Reline::Unicode.get_next_mbchar_size(current_line, @byte_pointer)
-        before = current_line.byteslice(0, @byte_pointer)
-        remaining_point = @byte_pointer + byte_size
-        after = current_line.byteslice(remaining_point, current_line.bytesize - remaining_point)
-        set_current_line(before + k + after)
-        @waiting_proc = nil
-      elsif arg > 1
-        byte_size = 0
-        arg.times do
-          byte_size += Reline::Unicode.get_next_mbchar_size(current_line, @byte_pointer + byte_size)
-        end
-        before = current_line.byteslice(0, @byte_pointer)
-        remaining_point = @byte_pointer + byte_size
-        after = current_line.byteslice(remaining_point, current_line.bytesize - remaining_point)
-        replaced = k * arg
-        set_current_line(before + replaced + after, @byte_pointer + replaced.bytesize)
-        @waiting_proc = nil
-      end
+      before = current_line.byteslice(0, @byte_pointer)
+      after_gcs = current_line.byteslice(@byte_pointer..-1).grapheme_clusters
+      before_cursor = before + k * [arg, after_gcs.size].min
+      after_cursor = after_gcs.drop(arg).join
+      set_current_line(before_cursor + after_cursor, before_cursor.grapheme_clusters[0...-1].sum(&:bytesize))
+      @waiting_proc = nil
     }
   end
 

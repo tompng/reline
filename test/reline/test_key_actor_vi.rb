@@ -360,10 +360,12 @@ class Reline::ViInsertTest < Reline::TestCase
   def test_vi_replace_char
     input_keys("abcdef\C-[03l")
     assert_line_around_cursor('abc', 'def')
-    input_keys('rz')
-    assert_line_around_cursor('abc', 'zef')
-    input_keys('2rx')
-    assert_line_around_cursor('abcxx', 'f')
+    input_keys('rx')
+    assert_line_around_cursor('abc', 'xef')
+    input_keys('2ry')
+    assert_line_around_cursor('abcy', 'yf')
+    input_keys('3rz')
+    assert_line_around_cursor('abcyz', 'z')
   end
 
   def test_vi_replace_char_with_mbchar
@@ -372,7 +374,9 @@ class Reline::ViInsertTest < Reline::TestCase
     input_keys('rx')
     assert_line_around_cursor('あ', 'xうえお')
     input_keys('l2ry')
-    assert_line_around_cursor('あxyy', 'お')
+    assert_line_around_cursor('あxy', 'yお')
+    input_keys('3rz')
+    assert_line_around_cursor('あxyz', 'z')
   end
 
   def test_vi_next_char
