@@ -2231,91 +2231,51 @@ class Reline::LineEditor
     }
   end
 
-  private def vi_next_char(key, arg: 1, inclusive: false)
+  private def vi_next_char(_key, arg: 1, inclusive: false)
     @waiting_proc = ->(key_for_proc) { search_next_char(key_for_proc, arg, inclusive: inclusive) }
   end
 
-  private def vi_to_next_char(key, arg: 1, inclusive: false)
+  private def vi_to_next_char(_key, arg: 1, inclusive: false)
     @waiting_proc = ->(key_for_proc) { search_next_char(key_for_proc, arg, need_prev_char: true, inclusive: inclusive) }
   end
 
   private def search_next_char(key, arg, need_prev_char: false, inclusive: false)
-    prev_total = nil
-    total = nil
-    found = false
-    current_line.byteslice(@byte_pointer..-1).grapheme_clusters.each do |mbchar|
-      # total has [byte_size, cursor]
-      unless total
-        # skip cursor point
-        width = Reline::Unicode.get_mbchar_width(mbchar)
-        total = [mbchar.bytesize, width]
-      else
-        if key == mbchar
-          arg -= 1
-          if arg.zero?
-            found = true
-            break
-          end
-        end
-        width = Reline::Unicode.get_mbchar_width(mbchar)
-        prev_total = total
-        total = [total.first + mbchar.bytesize, total.last + width]
-      end
+    gcs = current_line.byteslice(@byte_pointer..-1).grapheme_clusters
+    founds = []
+    founds << gcs.shift if gcs.first == key # skip cursor point
+    arg.times do
+      break unless (index = gcs.index(key))
+
+      founds.concat gcs.shift(index + 1)
     end
-    if not need_prev_char and found and total
-      byte_size, _ = total
-      @byte_pointer += byte_size
-    elsif need_prev_char and found and prev_total
-      byte_size, _ = prev_total
-      @byte_pointer += byte_size
-    end
-    if inclusive
-      byte_size = Reline::Unicode.get_next_mbchar_size(current_line, @byte_pointer)
-      if byte_size > 0
-        @byte_pointer += byte_size
-      end
-    end
+
+    founds.pop unless inclusive
+    founds.pop if need_prev_char
+    @byte_pointer += founds.sum(&:bytesize)
     @waiting_proc = nil
   end
 
-  private def vi_prev_char(key, arg: 1)
+  private def vi_prev_char(_key, arg: 1)
     @waiting_proc = ->(key_for_proc) { search_prev_char(key_for_proc, arg) }
   end
 
-  private def vi_to_prev_char(key, arg: 1)
+  private def vi_to_prev_char(_key, arg: 1)
     @waiting_proc = ->(key_for_proc) { search_prev_char(key_for_proc, arg, true) }
   end
 
   private def search_prev_char(key, arg, need_next_char = false)
-    prev_total = nil
-    total = nil
+    gcs = current_line.byteslice(0..@byte_pointer).grapheme_clusters
     found = false
-    current_line.byteslice(0..@byte_pointer).grapheme_clusters.reverse_each do |mbchar|
-      # total has [byte_size, cursor]
-      unless total
-        # skip cursor point
-        width = Reline::Unicode.get_mbchar_width(mbchar)
-        total = [mbchar.bytesize, width]
-      else
-        if key == mbchar
-          arg -= 1
-          if arg.zero?
-            found = true
-            break
-          end
-        end
-        width = Reline::Unicode.get_mbchar_width(mbchar)
-        prev_total = total
-        total = [total.first + mbchar.bytesize, total.last + width]
-      end
+
+    gcs.pop if gcs.last == key # skip cursor point
+    arg.times do
+      break unless (index = gcs.rindex(key))
+
+      found = true
+      gcs.pop while gcs.size > index
     end
-    if not need_next_char and found and total
-      byte_size, _ = total
-      @byte_pointer -= byte_size
-    elsif need_next_char and found and prev_total
-      byte_size, _ = prev_total
-      @byte_pointer -= byte_size
-    end
+    gcs << key if need_next_char && found
+    @byte_pointer = gcs.sum(&:bytesize)
     @waiting_proc = nil
   end
 
