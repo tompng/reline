@@ -225,7 +225,6 @@ end
 
 begin
   prompt = ENV['RELINE_TEST_PROMPT'] || "\e[1mprompt>\e[m "
-  puts 'Multiline REPL.'
   while code = Reline.readmultiline(prompt, true, rprompt: rprompt) { |code| TerminationChecker.terminated?(code) }
     case code.chomp
     when 'exit', 'quit', 'q'
